@@ -1,0 +1,50 @@
+{"prompt": "What is the capital of France?", "max_tokens": 32}
+{"prompt": "Define machine learning in one sentence.", "max_tokens": 40}
+{"prompt": "What year did World War II end?", "max_tokens": 20}
+{"prompt": "Name three programming languages.", "max_tokens": 30}
+{"prompt": "What is 17 times 34?", "max_tokens": 20}
+{"prompt": "Who wrote Romeo and Juliet?", "max_tokens": 20}
+{"prompt": "What does HTTP stand for?", "max_tokens": 30}
+{"prompt": "Describe what a CPU does.", "max_tokens": 50}
+{"prompt": "What is photosynthesis?", "max_tokens": 40}
+{"prompt": "Name the planets in the solar system.", "max_tokens": 50}
+{"prompt": "What is a neural network?", "max_tokens": 50}
+{"prompt": "Define gradient descent.", "max_tokens": 50}
+{"prompt": "What is Docker?", "max_tokens": 40}
+{"prompt": "Explain what an API is.", "max_tokens": 50}
+{"prompt": "What is the speed of light?", "max_tokens": 30}
+{"prompt": "Who invented the telephone?", "max_tokens": 25}
+{"prompt": "What is JSON?", "max_tokens": 40}
+{"prompt": "Name the first five prime numbers.", "max_tokens": 30}
+{"prompt": "What is a token in NLP?", "max_tokens": 50}
+{"prompt": "Define latency in computing.", "max_tokens": 40}
+{"prompt": "What is the Turing test?", "max_tokens": 50}
+{"prompt": "Who is Alan Turing?", "max_tokens": 50}
+{"prompt": "What is backpropagation?", "max_tokens": 50}
+{"prompt": "Explain what a transformer model is.", "max_tokens": 64}
+{"prompt": "What is GPU memory bandwidth?", "max_tokens": 40}
+{"prompt": "Name three cloud providers.", "max_tokens": 30}
+{"prompt": "What is Kubernetes?", "max_tokens": 50}
+{"prompt": "Define batch normalization.", "max_tokens": 50}
+{"prompt": "What is attention in deep learning?", "max_tokens": 64}
+{"prompt": "What is a vector database?", "max_tokens": 50}
+{"prompt": "Explain what PagedAttention is.", "max_tokens": 64}
+{"prompt": "What is quantization in ML?", "max_tokens": 50}
+{"prompt": "Define throughput in inference.", "max_tokens": 40}
+{"prompt": "What does vLLM stand for?", "max_tokens": 30}
+{"prompt": "What is continuous batching?", "max_tokens": 50}
+{"prompt": "Explain time to first token (TTFT).", "max_tokens": 50}
+{"prompt": "What is KV cache?", "max_tokens": 50}
+{"prompt": "Define speculative decoding.", "max_tokens": 64}
+{"prompt": "What is CUDA?", "max_tokens": 40}
+{"prompt": "What is Triton in ML?", "max_tokens": 50}
+{"prompt": "Explain what a kernel is in GPU computing.", "max_tokens": 64}
+{"prompt": "What is HuggingFace?", "max_tokens": 40}
+{"prompt": "Define inference latency.", "max_tokens": 40}
+{"prompt": "What is a softmax function?", "max_tokens": 50}
+{"prompt": "Describe ReLU activation.", "max_tokens": 40}
+{"prompt": "What is GELU activation?", "max_tokens": 50}
+{"prompt": "Define model parallelism.", "max_tokens": 50}
+{"prompt": "What is tensor parallelism?", "max_tokens": 50}
+{"prompt": "Explain pipeline parallelism.", "max_tokens": 50}
+{"prompt": "What is Flash Attention?", "max_tokens": 64}

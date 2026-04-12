@@ -1,0 +1,4 @@
+{
+  "status": "skipped",
+  "reason": "No pre-quantized AWQ variant of google/gemma-2-2b-it publicly available. Quantization benefits are negligible at 2B parameter scale (<6GB in FP16). AWQ comparison would be meaningful for 7B+ models."
+}

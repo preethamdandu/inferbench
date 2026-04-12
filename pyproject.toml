@@ -1,0 +1,53 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "inferbench"
+version = "0.1.0"
+description = "Open-source LLM and image generation inference benchmarking platform"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "pydantic",
+    "pydantic-settings",
+    "structlog",
+    "aiohttp",
+    "pynvml",
+    "prometheus-client",
+    "torch",
+    "transformers",
+    "accelerate",
+    "diffusers",
+    "safetensors",
+    "triton; sys_platform == 'linux'",
+    "bitsandbytes; sys_platform == 'linux'",
+    "auto-gptq; sys_platform == 'linux'",
+    "autoawq; sys_platform == 'linux'",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "ruff",
+    "pyright",
+    "httpx",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+exclude = [".venv", ".uv_python", ".uv_cache", ".cache"]
+
+[tool.pyright]
+include = ["src", "tests", "scripts"]
+typeCheckingMode = "basic"
+reportMissingTypeStubs = false
+venvPath = "."
+venv = ".venv"
+pythonVersion = "3.11"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]

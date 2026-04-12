@@ -1,0 +1,4 @@
+{
+  "status": "skipped",
+  "reason": "SDXL benchmarks skipped on Colab T4 free tier. SDXL generation on T4 takes 30-60s per image, and running 4 configurations × 10 images would exceed the ~90 min Colab session window. Deferred to a higher-VRAM GPU environment."
+}

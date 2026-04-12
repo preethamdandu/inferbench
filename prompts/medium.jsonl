@@ -1,0 +1,50 @@
+{"prompt": "Explain the architecture of a transformer model, including how multi-head attention works and why positional encodings are necessary.", "max_tokens": 200}
+{"prompt": "Describe the differences between supervised learning, unsupervised learning, and reinforcement learning, with one concrete example for each.", "max_tokens": 200}
+{"prompt": "What is the difference between precision and recall? Explain the F1 score and when to use it versus accuracy.", "max_tokens": 150}
+{"prompt": "Describe how the PagedAttention mechanism in vLLM works and why it improves memory efficiency compared to naive KV cache management.", "max_tokens": 256}
+{"prompt": "Explain continuous batching in LLM inference. How does it differ from static batching, and what are the throughput benefits?", "max_tokens": 200}
+{"prompt": "What is the difference between FP16 and INT8 quantization? Explain the tradeoffs: model size, inference speed, and accuracy degradation.", "max_tokens": 200}
+{"prompt": "Describe how backpropagation works in a neural network, including the chain rule and how gradients flow through layers.", "max_tokens": 200}
+{"prompt": "What is the ORCA paper, and what scheduling innovation did it introduce for LLM serving?", "max_tokens": 200}
+{"prompt": "Explain the difference between model parallelism and tensor parallelism. When would you use each?", "max_tokens": 200}
+{"prompt": "How does speculative decoding work and what throughput gains can be expected?", "max_tokens": 200}
+{"prompt": "Describe the Roofline model for GPU compute. What does it mean for a kernel to be compute-bound vs memory-bandwidth-bound?", "max_tokens": 200}
+{"prompt": "Explain Flash Attention. How does it avoid materializing the full attention matrix while maintaining numerical equivalence?", "max_tokens": 256}
+{"prompt": "What are the differences between AWQ and GPTQ for LLM quantization? Which achieves better quality-performance tradeoff?", "max_tokens": 200}
+{"prompt": "Describe the lifecycle of an HTTP request in a distributed microservices architecture.", "max_tokens": 150}
+{"prompt": "Explain how Kubernetes orchestrates containers. What are pods, deployments, and services?", "max_tokens": 200}
+{"prompt": "Describe how Prometheus and Grafana work together for monitoring. What is a scrape target and how are alerts configured?", "max_tokens": 200}
+{"prompt": "What is the difference between a process and a thread in an operating system? How does Python's GIL affect multithreading?", "max_tokens": 200}
+{"prompt": "Explain how asyncio works in Python. What is the event loop and how do coroutines enable cooperative multitasking?", "max_tokens": 200}
+{"prompt": "Describe how HuggingFace Transformers handles model loading, tokenization, and generation. What does generate() do internally?", "max_tokens": 256}
+{"prompt": "What is BitsAndBytes and how does it implement 4-bit quantization for loading large language models on consumer hardware?", "max_tokens": 200}
+{"prompt": "Explain the difference between top-k and top-p (nucleus) sampling for LLM text generation.", "max_tokens": 150}
+{"prompt": "Describe what a LoRA adapter is and how it reduces the number of trainable parameters during fine-tuning.", "max_tokens": 200}
+{"prompt": "What is the difference between greedy decoding and beam search? When would you prefer one over the other?", "max_tokens": 150}
+{"prompt": "Explain what a confusion matrix is and how you interpret precision, recall, and F1 from it.", "max_tokens": 150}
+{"prompt": "Describe the advantages and disadvantages of using a Vector Database like Pinecone or Weaviate for RAG applications.", "max_tokens": 200}
+{"prompt": "What are the SOLID principles in software engineering? Provide a concrete example demonstrating each.", "max_tokens": 256}
+{"prompt": "Explain the CAP theorem. In a distributed system, under a network partition, what tradeoff must you choose?", "max_tokens": 200}
+{"prompt": "What is the difference between SQL and NoSQL databases? Give use cases where each excels.", "max_tokens": 150}
+{"prompt": "Describe what a REST API is. What makes an API RESTful and what are the main HTTP verbs used?", "max_tokens": 150}
+{"prompt": "Explain how Docker layers work. What is a Dockerfile, and how does copy-on-write reduce image sizes?", "max_tokens": 200}
+{"prompt": "What is CI/CD? Describe a typical pipeline from code commit to production deployment.", "max_tokens": 150}
+{"prompt": "Explain what gRPC is and how it differs from REST/JSON APIs. What are protobuf buffers?", "max_tokens": 200}
+{"prompt": "Describe how distributed tracing works in microservices. What is a trace ID and a span?", "max_tokens": 150}
+{"prompt": "What is the difference between eventual consistency and strong consistency in distributed databases?", "max_tokens": 150}
+{"prompt": "Explain the map-reduce programming paradigm with a word count example.", "max_tokens": 150}
+{"prompt": "What is Stable Diffusion and how does the diffusion process work at a high level?", "max_tokens": 200}
+{"prompt": "Describe the architecture of a Variational Autoencoder (VAE). How does the reparameterization trick work?", "max_tokens": 200}
+{"prompt": "What is CLIP? How does it enable zero-shot image classification?", "max_tokens": 150}
+{"prompt": "Explain what a diffusion model's noise schedule is and why it matters.", "max_tokens": 150}
+{"prompt": "What is classifier-free guidance in diffusion models and how does the guidance scale affect outputs?", "max_tokens": 150}
+{"prompt": "Describe the PyTorch autograd system. How does it compute gradients for arbitrary computation graphs?", "max_tokens": 200}
+{"prompt": "What is torch.compile and how does it use Triton to generate optimized GPU kernels?", "max_tokens": 200}
+{"prompt": "Explain what NCCL is and how it handles all-reduce operations in distributed training.", "max_tokens": 150}
+{"prompt": "What is mixed precision training? Why use FP16 for forward passes but FP32 for optimizer steps?", "max_tokens": 150}
+{"prompt": "Describe how gradient checkpointing reduces memory usage during training at the cost of compute.", "max_tokens": 150}
+{"prompt": "What is DeepSpeed and how does ZeRO Stage 3 partition optimizer state, gradients, and weights?", "max_tokens": 200}
+{"prompt": "Explain what RLHF (Reinforcement Learning from Human Feedback) is and how PPO is used to fine-tune LLMs.", "max_tokens": 256}
+{"prompt": "What is Constitutional AI and how does Anthropic use it to improve safety alignment?", "max_tokens": 150}
+{"prompt": "Describe the difference between RAG (Retrieval Augmented Generation) and fine-tuning for knowledge injection.", "max_tokens": 150}
+{"prompt": "Explain how a language model can be served at scale. What are the components needed: load balancer, serving engine, cache?", "max_tokens": 200}

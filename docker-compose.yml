@@ -1,0 +1,100 @@
+version: '3.8'
+
+services:
+  gateway:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.gateway
+    ports:
+      - "8000:8000"
+    environment:
+      - GATEWAY_HOST=0.0.0.0
+      - GATEWAY_PORT=8000
+      - VLLM_URL=http://vllm:8001
+      - TGI_URL=http://tgi:8002
+      - CUSTOM_URL=http://custom:8003
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+
+  vllm:
+    image: vllm/vllm-openai:latest
+    ports:
+      - "8001:8000"
+    profiles: ["vllm"]
+    environment:
+      - HF_TOKEN=${HF_TOKEN}
+    command: ["--model", "google/gemma-2-2b-it", "--max-model-len", "4096", "--dtype", "float16"]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  tgi:
+    image: ghcr.io/huggingface/text-generation-inference:2.0
+    ports:
+      - "8002:80"
+    profiles: ["tgi"]
+    environment:
+      - HUGGING_FACE_HUB_TOKEN=${HF_TOKEN}
+      - MODEL_ID=google/gemma-2-2b-it
+      - MAX_INPUT_LENGTH=2048
+      - MAX_TOTAL_TOKENS=4096
+    volumes:
+      - ./data:/data
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  custom:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.custom
+    ports:
+      - "8003:8003"
+    profiles: ["custom"]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  bench:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.bench
+    profiles: ["bench"]
+    environment:
+      - GATEWAY_HOST=gateway
+      - GATEWAY_PORT=8000
+    depends_on:
+      - gateway

@@ -1,0 +1,4 @@
+{
+  "status": "skipped",
+  "reason": "TGI requires Docker which is not available in Google Colab. TGI benchmarking deferred to a Docker-capable environment (Runpod/Lambda/local workstation)."
+}

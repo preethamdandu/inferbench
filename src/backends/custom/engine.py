@@ -14,6 +14,31 @@ from src.backends.custom.scheduler import (
 logger = structlog.get_logger()
 
 
+def _cache_to_layer_tuples(pkv: object) -> list[tuple[torch.Tensor, torch.Tensor]]:
+    """Extract per-layer (key, value) tensors from any transformers cache format.
+
+    transformers >= 5 returns a ``DynamicCache`` (not subscriptable) with a
+    ``.layers`` list; older versions return a tuple of (k, v) tuples.
+    """
+    layers = getattr(pkv, "layers", None)
+    if layers is not None:
+        return [(layer.keys, layer.values) for layer in layers]
+    return list(pkv)  # type: ignore[call-overload]
+
+
+def _layer_tuples_to_cache(layer_kvs: list[tuple[torch.Tensor, torch.Tensor]]) -> object:
+    """Build a model-consumable past_key_values from per-layer (k, v) tensors."""
+    try:
+        from transformers import DynamicCache
+    except ImportError:
+        return tuple(layer_kvs)
+
+    cache = DynamicCache()
+    for layer_idx, (k, v) in enumerate(layer_kvs):
+        cache.update(k, v, layer_idx)
+    return cache
+
+
 class CustomInferenceEngine:
     """
     Custom inference engine implementing continuous batching.
@@ -138,13 +163,14 @@ class CustomInferenceEngine:
             )
 
         # Unbatch past_key_values and save back to the request objects
-        num_layers = len(outputs.past_key_values)
+        layer_kvs = _cache_to_layer_tuples(outputs.past_key_values)
+        num_layers = len(layer_kvs)
         new_pkv_unbatched: list[list[tuple[torch.Tensor, torch.Tensor]]] = [
             [] for _ in range(batch_size)
         ]
 
         for layer_idx in range(num_layers):
-            k_batch, v_batch = outputs.past_key_values[layer_idx]
+            k_batch, v_batch = layer_kvs[layer_idx]
             for i, req in enumerate(seqs):
                 prompt_len = len(req.prompt_token_ids)
                 # slice the last `prompt_len` tokens corresponding to the unpadded sequence
@@ -196,7 +222,7 @@ class CustomInferenceEngine:
             batched_v = torch.cat(layer_vals, dim=0)
             batched_pkv.append((batched_k, batched_v))
 
-        past_key_values = tuple(batched_pkv)
+        past_key_values = _layer_tuples_to_cache(batched_pkv)
 
         attention_mask = torch.zeros(
             (batch_size, max_seq_len + 1), dtype=torch.long, device=self.model.device
@@ -217,8 +243,9 @@ class CustomInferenceEngine:
             [] for _ in range(batch_size)
         ]
 
+        out_layer_kvs = _cache_to_layer_tuples(outputs.past_key_values)
         for layer_idx in range(num_layers):
-            k_batch, v_batch = outputs.past_key_values[layer_idx]
+            k_batch, v_batch = out_layer_kvs[layer_idx]
             for i, req in enumerate(seqs):
                 seq_len = len(req.prompt_token_ids) + len(req.generated_token_ids)
                 k_seq = k_batch[i : i + 1, :, -seq_len:, :]

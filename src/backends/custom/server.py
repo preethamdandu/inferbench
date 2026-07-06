@@ -132,8 +132,6 @@ async def create_completion(req: CompletionRequest) -> CompletionResponse:
         future=loop.create_future(),
     )
 
-    if engine is None:
-        raise HTTPException(status_code=503, detail="Engine not loaded")
     engine.scheduler.add_request(seq_req)
 
     try:

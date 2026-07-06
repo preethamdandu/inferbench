@@ -4,7 +4,9 @@
 
 ---
 
-## LLM Benchmark Results — Mistral-7B-v0.1 (A100 80GB, FP16)
+> **Benchmark status:** The tables below are **illustrative targets**, not measured results. No completed benchmark artifacts exist in `benchmarks/` yet — only skip stubs from Colab development. Run `scripts/run_bench.py` on a GPU machine, save JSON to `benchmarks/`, then `make report` to replace these numbers with real data.
+
+## LLM Benchmark Results — Mistral-7B-v0.1 (A100 80GB, FP16) *(illustrative)*
 
 > Benchmark config: 512 concurrent requests, 50-token prompts, 200-token outputs, 60-second run, 10-request warmup. Seeds fixed at 42. Prompt dataset: `prompts/mixed.jsonl`.
 
@@ -35,7 +37,7 @@
 
 ---
 
-## Image Generation Results — Stable Diffusion XL (A100 80GB)
+## Image Generation Results — Stable Diffusion XL (A100 80GB) *(illustrative)*
 
 > Config: 1024×1024 images, 30 DDIM steps, guidance_scale=7.5, 20 sequential generations after 2 warmup runs.
 
@@ -50,7 +52,7 @@
 
 ---
 
-## Triton Kernel Results — A100 80GB SXM4
+## Triton Kernel Results — A100 80GB SXM4 *(illustrative)*
 
 ### Fused Softmax vs PyTorch (4096 rows)
 

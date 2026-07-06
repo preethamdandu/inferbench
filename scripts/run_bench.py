@@ -132,16 +132,21 @@ def _run_transformers(
             return arr[-1]
         return arr[f] + (k - f) * (arr[c] - arr[f])
 
+    tokens_per_second = total_tokens / elapsed
+    requests_per_second = len(results) / elapsed
     report = {
+        "status": "completed",
         "backend": "transformers",
         "model": model_id,
         "concurrency": 1,
         "duration_s": elapsed,
+        "duration_seconds": elapsed,
         "total_requests": len(results),
         "successful_requests": len(results),
         "failed_requests": 0,
-        "throughput_tokens_per_sec": total_tokens / elapsed,
-        "requests_per_second": len(results) / elapsed,
+        "throughput_tokens_per_sec": tokens_per_second,
+        "tokens_per_second": tokens_per_second,
+        "requests_per_second": requests_per_second,
         "latency_p50_ms": pct(latencies, 50),
         "latency_p90_ms": pct(latencies, 90),
         "latency_p99_ms": pct(latencies, 99),
@@ -289,16 +294,21 @@ async def _run_http(
         return arr[f] + (k - f) * (arr[c] - arr[f])
 
     error_rate = 100.0 * errors / max(len(results) + errors, 1)
+    tokens_per_second = total_tokens / elapsed
+    requests_per_second = len(results) / elapsed
     report = {
+        "status": "completed",
         "backend": backend,
         "model": model_id,
         "concurrency": concurrency,
         "duration_s": elapsed,
+        "duration_seconds": elapsed,
         "total_requests": len(results) + errors,
         "successful_requests": len(results),
         "failed_requests": errors,
-        "throughput_tokens_per_sec": total_tokens / elapsed,
-        "requests_per_second": len(results) / elapsed,
+        "throughput_tokens_per_sec": tokens_per_second,
+        "tokens_per_second": tokens_per_second,
+        "requests_per_second": requests_per_second,
         "latency_p50_ms": pct(latencies, 50),
         "latency_p90_ms": pct(latencies, 90),
         "latency_p99_ms": pct(latencies, 99),

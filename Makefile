@@ -34,7 +34,7 @@ bench-kernels:
 	.venv/bin/python scripts/run_kernel_bench.py
 
 report:
-	.venv/bin/python src/bench/report.py
+	.venv/bin/python -m src.bench.report
 
 grafana:
 	open http://localhost:3000

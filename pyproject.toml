@@ -19,12 +19,7 @@ dependencies = [
     "torch",
     "transformers",
     "accelerate",
-    "diffusers",
     "safetensors",
-    "triton; sys_platform == 'linux'",
-    "bitsandbytes; sys_platform == 'linux'",
-    "auto-gptq; sys_platform == 'linux'",
-    "autoawq; sys_platform == 'linux'",
 ]
 
 [project.optional-dependencies]
@@ -34,6 +29,20 @@ dev = [
     "ruff",
     "pyright",
     "httpx",
+]
+diffusion = [
+    "diffusers",
+]
+kernels = [
+    "triton; sys_platform == 'linux'",
+]
+quantization = [
+    "bitsandbytes; sys_platform == 'linux'",
+    "auto-gptq; sys_platform == 'linux'",
+    "autoawq; sys_platform == 'linux'",
+]
+all = [
+    "inferbench[dev,diffusion,kernels,quantization]",
 ]
 
 [tool.ruff]

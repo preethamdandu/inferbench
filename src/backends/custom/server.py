@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -121,21 +122,28 @@ async def create_completion(req: CompletionRequest) -> CompletionResponse:
 
     prompt_token_ids = tokenizer.encode(req.prompt, add_special_tokens=True)
     request_id = f"cmpl-{uuid.uuid4().hex}"
+    loop = asyncio.get_running_loop()
 
     seq_req = SequenceRequest(
         request_id=request_id,
         prompt_token_ids=prompt_token_ids,
         max_tokens=req.max_tokens,
         temperature=req.temperature,
+        future=loop.create_future(),
     )
 
+    if engine is None:
+        raise HTTPException(status_code=503, detail="Engine not loaded")
     engine.scheduler.add_request(seq_req)
 
     try:
-        # Await the future
-        result = await seq_req.future
+        result = await asyncio.wait_for(seq_req.future, timeout=600.0)
+    except TimeoutError:
+        engine.scheduler.cancel_request(seq_req, reason="generation timed out")
+        raise HTTPException(status_code=504, detail="Generation timed out") from None
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        engine.scheduler.cancel_request(seq_req, reason=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
     return CompletionResponse(
         id=request_id,

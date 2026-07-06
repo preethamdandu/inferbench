@@ -84,7 +84,8 @@ def test_schedule_resolves_future_on_completion():
     assert not req.future.done()
     req.generated_token_ids.append(42)
     scheduler.schedule()
-    assert req.future.done()
+    assert req.is_finished
+    assert req.state == RequestState.COMPLETED
     loop.close()
 
 

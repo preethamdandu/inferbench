@@ -52,6 +52,19 @@ class ContinuousBatchScheduler:
     def add_request(self, req: SequenceRequest) -> None:
         self.waiting.append(req)
 
+    def cancel_request(self, req: SequenceRequest, reason: str = "cancelled") -> None:
+        """Remove a request and fail its future (e.g. client timeout)."""
+        if req in self.waiting:
+            self.waiting.remove(req)
+        if req in self.running:
+            self.running.remove(req)
+        if req.kv_block_ids:
+            self.kv_cache.free(req.kv_block_ids)
+            req.kv_block_ids = []
+        req.state = RequestState.COMPLETED
+        if not req.future.done():
+            req.future.set_exception(RuntimeError(reason))
+
     def schedule(self) -> list[SequenceRequest]:
         """Runs one scheduling iteration and returns sequences for the next forward pass."""
 
@@ -62,8 +75,6 @@ class ContinuousBatchScheduler:
                 req.state = RequestState.COMPLETED
                 self.kv_cache.free(req.kv_block_ids)
                 req.kv_block_ids = []
-                if not req.future.done():
-                    req.future.set_result({"text": "dummy"})
             else:
                 still_running.append(req)
         self.running = still_running
@@ -93,8 +104,8 @@ class ContinuousBatchScheduler:
                     req.kv_block_ids.extend(self.kv_cache.allocate(1))
                     active_sequences.append(req)
                 else:
-                    # simplistic backpressure: don't schedule if out of memory
-                    pass
+                    # Out of KV capacity — fail instead of hanging forever
+                    self.cancel_request(req, reason="KV cache exhausted")
             else:
                 active_sequences.append(req)
 

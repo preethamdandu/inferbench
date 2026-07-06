@@ -251,7 +251,7 @@ async def _run_http(
                 })
             except Exception as e:
                 errors += 1
-                print(f"  [warn] request failed: {e}")
+                print(f"  [warn] request failed: {type(e).__name__}: {e}")
 
     # Warmup
     print(f"[{backend}] warming up ({warmup} requests)...")

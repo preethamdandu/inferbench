@@ -238,7 +238,11 @@ async def _run_http(
                 else:
                     choices = data.get("choices", [])
                     text = choices[0].get("text", "") if choices else ""
-                    completion_tokens = max(len(text.split()), 1)
+                    # Prefer exact token counts reported by the server (custom, vLLM)
+                    usage = data.get("usage") or {}
+                    completion_tokens = int(
+                        usage.get("completion_tokens") or max(len(text.split()), 1)
+                    )
                     timing = data.get("timing", {})
                     ttft_ms = timing.get("time_to_first_token_ms")
                     if ttft_ms is None:

@@ -16,12 +16,12 @@ class Settings(BaseSettings):
     custom_url: str = "http://localhost:8003"
 
     # Model configs
-    llm_model_id: str = "meta-llama/Llama-2-7b-hf"
+    llm_model_id: str = "google/gemma-2-2b-it"
     diffusion_model_id: str = "stabilityai/stable-diffusion-xl-base-1.0"
 
     # Custom Backend Config
     max_batch_size: int = 32
-    kv_cache_blocks: int = 1024
+    kv_cache_blocks: int = 128
     block_size: int = 16
 
     # Benchmarking

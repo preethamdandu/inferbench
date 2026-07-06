@@ -10,7 +10,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, PreTrainedModel, P
 from src.backends.custom.engine import CustomInferenceEngine
 from src.backends.custom.kv_cache import KVCacheManager
 from src.backends.custom.scheduler import ContinuousBatchScheduler, SequenceRequest
-from src.config import settings
+from src.config import Settings
 
 # Global state
 engine: CustomInferenceEngine | None = None
@@ -54,11 +54,13 @@ class CompletionResponse(BaseModel):
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     global engine, tokenizer
 
+    cfg = Settings()
+    model_id = cfg.llm_model_id
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     # Load model and tokenizer
     # Using PreTrainedTokenizer ensures type consistency for Pyright.
-    tok = AutoTokenizer.from_pretrained(settings.llm_model_id)
+    tok = AutoTokenizer.from_pretrained(model_id)
     if isinstance(tok, PreTrainedTokenizer):
         tokenizer = tok
     else:
@@ -69,7 +71,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         tokenizer.pad_token_id = tokenizer.eos_token_id
 
     mod = AutoModelForCausalLM.from_pretrained(
-        settings.llm_model_id, torch_dtype=torch.float16, device_map=device
+        model_id, torch_dtype=torch.float16, device_map=device
     )
     if isinstance(mod, PreTrainedModel):
         model = mod
@@ -84,9 +86,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     # Initialize components
     kv_cache = KVCacheManager(
-        num_blocks=settings.kv_cache_blocks,
+        num_blocks=cfg.kv_cache_blocks,
         num_layers=num_layers,
-        block_size=settings.block_size,
+        block_size=cfg.block_size,
         num_heads=num_heads,
         head_dim=head_dim,
         device=device,
@@ -95,8 +97,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     scheduler = ContinuousBatchScheduler(
         kv_cache=kv_cache,
-        max_batch_size=settings.max_batch_size,
-        block_size=settings.block_size,
+        max_batch_size=cfg.max_batch_size,
+        block_size=cfg.block_size,
     )
 
     if tokenizer is not None:

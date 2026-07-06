@@ -35,11 +35,10 @@ def _gelu_fwd_kernel(
     coeff = 0.044715
     x3 = x * x * x
     inner = pi_coeff * (x + coeff * x3)
-    # tl.math.tanh works in Triton >=2.1; tl.libdevice.tanh for older versions
-    try:
-        tanh_val = tl.math.tanh(inner)  # type: ignore[attr-defined]
-    except AttributeError:
-        tanh_val = tl.libdevice.tanh(inner)  # type: ignore[attr-defined]
+    # tanh(z) = 1 - 2 / (exp(2z) + 1), built from tl.exp so it compiles on every
+    # Triton version (tl.math/libdevice namespaces moved between releases).
+    # Saturates correctly at +/-1 for large |z| in fp32.
+    tanh_val = 1.0 - 2.0 / (tl.exp(2.0 * inner) + 1.0)
     y = 0.5 * x * (1.0 + tanh_val)
 
     tl.store(output_ptr + offsets, y, mask=mask)

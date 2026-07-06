@@ -61,47 +61,51 @@ class CustomInferenceEngine:
     async def _generation_loop(self) -> None:
         """Continuously loop: schedule requests, run forward passes, resolve completion."""
         while self.running:
-            batch = self.scheduler.schedule()
-            if not batch:
-                await asyncio.sleep(0.01)
-                continue
+            try:
+                batch = self.scheduler.schedule()
+                if not batch:
+                    await asyncio.sleep(0.01)
+                    continue
 
-            # Separate into prefill and decode
-            prefill_seqs = [req for req in batch if not req.generated_token_ids]
-            decode_seqs = [req for req in batch if req.generated_token_ids]
+                prefill_seqs = [req for req in batch if not req.generated_token_ids]
+                decode_seqs = [req for req in batch if req.generated_token_ids]
 
-            if prefill_seqs:
-                await asyncio.to_thread(self._run_prefill, prefill_seqs)
+                if prefill_seqs:
+                    await asyncio.to_thread(self._run_prefill, prefill_seqs)
 
-            if decode_seqs:
-                await asyncio.to_thread(self._run_decode, decode_seqs)
+                if decode_seqs:
+                    await asyncio.to_thread(self._run_decode, decode_seqs)
 
-            # Check completion
-            for req in batch:
-                if len(req.generated_token_ids) >= req.max_tokens or (
-                    req.generated_token_ids
-                    and req.generated_token_ids[-1] == self.tokenizer.eos_token_id
-                ):
-                    req.state = RequestState.COMPLETED
+                for req in batch:
+                    if len(req.generated_token_ids) >= req.max_tokens or (
+                        req.generated_token_ids
+                        and req.generated_token_ids[-1] == self.tokenizer.eos_token_id
+                    ):
+                        req.state = RequestState.COMPLETED
 
-                    text = self.tokenizer.decode(req.generated_token_ids, skip_special_tokens=True)
+                        text = self.tokenizer.decode(
+                            req.generated_token_ids, skip_special_tokens=True
+                        )
 
-                    total_time_ms = (time.time_ns() - req.start_time_ns) / 1e6
-                    ttft_ms = (
-                        (req.time_to_first_token_ns / 1e6)
-                        if req.time_to_first_token_ns
-                        else total_time_ms
-                    )
+                        total_time_ms = (time.time_ns() - req.start_time_ns) / 1e6
+                        ttft_ms = (
+                            (req.time_to_first_token_ns / 1e6)
+                            if req.time_to_first_token_ns
+                            else total_time_ms
+                        )
 
-                    result = {
-                        "text": text,
-                        "prompt_tokens": len(req.prompt_token_ids),
-                        "completion_tokens": len(req.generated_token_ids),
-                        "total_time_ms": total_time_ms,
-                        "time_to_first_token_ms": ttft_ms,
-                    }
-                    if not req.future.done():
-                        req.future.set_result(result)
+                        result = {
+                            "text": text,
+                            "prompt_tokens": len(req.prompt_token_ids),
+                            "completion_tokens": len(req.generated_token_ids),
+                            "total_time_ms": total_time_ms,
+                            "time_to_first_token_ms": ttft_ms,
+                        }
+                        if not req.future.done():
+                            req.future.set_result(result)
+            except Exception:
+                logger.exception("generation_loop_error")
+                await asyncio.sleep(0.1)
 
     def _run_prefill(self, seqs: list[SequenceRequest]) -> None:
         """Run prefill phase for new sequences using vectorized left-padding."""

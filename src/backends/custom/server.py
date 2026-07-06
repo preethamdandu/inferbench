@@ -16,6 +16,7 @@ from src.config import Settings
 # Global state
 engine: CustomInferenceEngine | None = None
 tokenizer: PreTrainedTokenizer | None = None
+engine_ready: bool = False
 
 
 class CompletionRequest(BaseModel):
@@ -53,7 +54,8 @@ class CompletionResponse(BaseModel):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    global engine, tokenizer
+    global engine, tokenizer, engine_ready
+    engine_ready = False
 
     cfg = Settings()
     model_id = cfg.llm_model_id
@@ -105,8 +107,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     if tokenizer is not None:
         engine = CustomInferenceEngine(model, tokenizer, scheduler)
         await engine.start()
+        engine_ready = True
 
     yield
+
+    engine_ready = False
 
     if engine is not None:
         await engine.stop()
@@ -161,6 +166,8 @@ async def create_completion(req: CompletionRequest) -> CompletionResponse:
 
 @app.get("/v1/health")
 async def health() -> dict[str, str]:
+    if not engine_ready or engine is None:
+        raise HTTPException(status_code=503, detail="Engine still loading")
     return {"status": "ok"}
 
 

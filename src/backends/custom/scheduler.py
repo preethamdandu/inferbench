@@ -82,9 +82,8 @@ class ContinuousBatchScheduler:
         # 2. Admit new requests
         while self.waiting and len(self.running) < self.max_batch_size:
             req = self.waiting[0]
-            required_blocks = (
-                len(req.prompt_token_ids) + req.max_tokens + self.block_size - 1
-            ) // self.block_size
+            total_tokens = len(req.prompt_token_ids) + req.max_tokens
+            required_blocks = (total_tokens + self.block_size - 1) // self.block_size
 
             if self.kv_cache.can_allocate(required_blocks):
                 req.kv_block_ids.extend(self.kv_cache.allocate(required_blocks))

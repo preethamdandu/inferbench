@@ -40,16 +40,41 @@
 
 ---
 
+## Triton Kernel Results — Tesla T4 (Colab, FP32)
+
+> Both kernels pass correctness against PyTorch reference (max diff < 3.2e-07). Median of 20 timed runs after 5 warmup iterations. T4 theoretical peak memory bandwidth: 320 GB/s. Raw artifact: [`benchmarks/triton_kernels.json`](benchmarks/triton_kernels.json).
+
+### Fused Softmax vs `torch.softmax` (2048 rows)
+
+| N Cols | PyTorch (ms) | Triton (ms) | Speedup | Triton BW (GB/s) | % Peak BW |
+|--------|-------------|-------------|---------|------------------|-----------|
+| 256    | 0.028       | 0.081       | 0.34×   | 52               | 16%       |
+| 1024   | 0.094       | 0.108       | 0.87×   | 155              | 48%       |
+| 2048   | 0.182       | 0.175       | 1.04×   | 192              | 60%       |
+| 4096   | 0.484       | 0.319       | **1.52×** | 210            | 66%       |
+| 8192   | 0.771       | 0.624       | 1.24×   | **215**          | **67%**   |
+
+### Fused GELU vs `torch.nn.functional.gelu` (tanh approximation)
+
+| N Elements | PyTorch (ms) | Triton (ms) | Speedup | Triton BW (GB/s) | % Peak BW |
+|------------|-------------|-------------|---------|------------------|-----------|
+| 65K        | 0.017       | 0.036       | 0.48×   | 15               | 5%        |
+| 1M         | 0.051       | 0.068       | 0.75×   | 124              | 39%       |
+| 4M         | 0.156       | 0.174       | 0.90×   | 193              | 60%       |
+
+**What the numbers show — and why GELU "loses":** Softmax benefits from fusion because the naive formulation makes three passes over the data (max, exp-sum, normalize); the fused kernel does one read and one write per row, winning **1.52×** once rows are large enough (≥2048 cols) to amortize kernel launch overhead, and sustaining 215 GB/s (67% of T4 peak). GELU, by contrast, is already a *single* elementwise kernel in PyTorch — there are no memory round-trips left to eliminate — so the hand-written kernel converges toward parity at large sizes (0.90×) and loses at small sizes where launch overhead dominates. This is the roofline lesson in practice: fusion pays only when it removes global-memory traffic, not when an op is already bandwidth-saturated.
+
+Kernel design docs and roofline analysis: [`src/kernels/README.md`](src/kernels/README.md)
+
+---
+
 ## Planned Benchmarks (not yet run)
 
 | Benchmark | Blocker | Runner |
 |-----------|---------|--------|
-| vLLM FP16 / AWQ head-to-head | Docker + GPU host (RunPod/Lambda) | `scripts/run_bench.py --backend vllm` |
+| vLLM FP16 / AWQ head-to-head | GPU host with vLLM (RunPod/Lambda; pip install, no Docker needed) | `scripts/run_bench.py --backend vllm` |
 | TGI head-to-head | Docker + GPU host | `scripts/run_bench.py --backend tgi` |
 | SDXL image generation (FP16 / attention slicing / torch.compile) | >16GB VRAM for reasonable step times | `scripts/run_bench_diffusion.py` |
-| Triton fused softmax / GELU vs PyTorch | Linux + CUDA (works on Colab; time-boxed out of the T4 session) | `scripts/run_kernel_bench.py` |
-
-Kernel design docs and roofline analysis: [`src/kernels/README.md`](src/kernels/README.md)
 
 ---
 

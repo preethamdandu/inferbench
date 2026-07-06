@@ -158,7 +158,7 @@ async def create_completion(req: CompletionRequest) -> CompletionResponse:
             total_tokens=int(result["prompt_tokens"]) + int(result["completion_tokens"]),
         ),
         timing=Timing(
-            total_ms=float(result["total_ms"]),
+            total_ms=float(result["total_time_ms"]),
             time_to_first_token_ms=float(result["time_to_first_token_ms"]),
         ),
     )

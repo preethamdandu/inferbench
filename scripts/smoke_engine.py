@@ -71,9 +71,39 @@ async def main() -> int:
         print(f"concurrent OK: {r['completion_tokens']} tokens in {r['total_time_ms']:.0f}ms")
 
     await engine.stop()
-    print("SMOKE TEST PASSED")
+    print("engine smoke test passed")
     return 0
 
 
+def server_roundtrip() -> None:
+    """Boot the real FastAPI server (tiny model, CPU) and hit /v1/completions."""
+    import os
+
+    os.environ["LLM_MODEL_ID"] = MODEL_ID
+    os.environ["KV_CACHE_BLOCKS"] = "64"
+    os.environ["MAX_BATCH_SIZE"] = "4"
+
+    from fastapi.testclient import TestClient
+
+    from src.backends.custom import server as srv
+
+    with TestClient(srv.app) as client:
+        health = client.get("/v1/health")
+        assert health.status_code == 200, health.text
+
+        resp = client.post(
+            "/v1/completions",
+            json={"model": MODEL_ID, "prompt": "Hello", "max_tokens": 5, "temperature": 0.0},
+        )
+        assert resp.status_code == 200, f"{resp.status_code}: {resp.text}"
+        data = resp.json()
+        assert data["usage"]["completion_tokens"] == 5, data
+        assert data["timing"]["total_ms"] > 0, data
+    print("server roundtrip passed")
+
+
 if __name__ == "__main__":
-    sys.exit(asyncio.run(main()))
+    rc = asyncio.run(main())
+    server_roundtrip()
+    print("SMOKE TEST PASSED")
+    sys.exit(rc)

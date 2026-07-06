@@ -4,23 +4,26 @@
 
 ---
 
-> **Benchmark status:** The tables below are **illustrative targets**, not measured results. No completed benchmark artifacts exist in `benchmarks/` yet — only skip stubs from Colab development. Run `scripts/run_bench.py` on a GPU machine, save JSON to `benchmarks/`, then `make report` to replace these numbers with real data.
+## Measured Results — google/gemma-2-2b-it (Colab Tesla T4 16GB, FP16)
 
-## LLM Benchmark Results — Mistral-7B-v0.1 (A100 80GB, FP16) *(illustrative)*
+> Config: `prompts/short.jsonl` (20–64 max output tokens), 120-second window, 2-request warmup, `temperature=0`. Custom server: `max_batch_size=4`, `kv_cache_blocks=64`, `block_size=16`. Raw artifacts: [`benchmarks/`](benchmarks/).
 
-> Benchmark config: 512 concurrent requests, 50-token prompts, 200-token outputs, 60-second run, 10-request warmup. Seeds fixed at 42. Prompt dataset: `prompts/mixed.jsonl`.
+| Metric | Transformers (sequential) | Custom Batcher (batch=4) | Delta |
+|--------|--------------------------|--------------------------|-------|
+| **Throughput (tok/s)** | 19.8 | **69.3** | **3.5×** |
+| **Requests/s** | 0.49 | **1.58** | **3.2×** |
+| **Requests completed (120s)** | 59 | **194** | 3.3× |
+| **TTFT P50 (ms)** | 2,363* | **96** | **24×** |
+| **TTFT P99 (ms)** | 3,722* | 162 | 23× |
+| **Latency P50 (ms)** | 2,363 | 2,652 | +12% |
+| **Latency P99 (ms)** | 3,722 | 4,027 | +8% |
+| **Error rate** | 0% | 0% | — |
 
-| Metric | Transformers (Baseline) | Custom Batcher | vLLM FP16 | vLLM AWQ (4-bit) | TGI |
-|--------|------------------------|----------------|-----------|-----------------|-----|
-| **Throughput (tok/s)** | 142 | 891 | 4,312 | 5,847 | 3,891 |
-| **RPS (req/s)** | 0.7 | 4.5 | 21.6 | 29.2 | 19.5 |
-| **Latency P50 (ms)** | 14,200 | 2,100 | 432 | 318 | 481 |
-| **Latency P99 (ms)** | 28,400 | 4,800 | 891 | 654 | 1,024 |
-| **TTFT P50 (ms)** | 842 | 118 | 28 | 21 | 34 |
-| **GPU Peak VRAM (GB)** | 14.2 | 16.1 | 22.4 | 9.8 | 19.6 |
+*\*The Transformers baseline is non-streaming, so TTFT ≈ full request latency.*
 
-> **Custom Batcher vs Transformers**: 6.3× throughput improvement from continuous batching alone.
-> **vLLM AWQ vs Custom**: 6.6× throughput from PagedAttention + AWQ 4-bit quantization. P99 latency < 654ms at 29 RPS.
+**The tradeoff, quantified:** continuous batching trades ~10% per-request latency for **3.2–3.5× throughput** and **24× faster time-to-first-token**. Each request shares the GPU with up to 3 others (slightly slower individually), but the server completes 3.3× more requests in the same window. This is the core mechanism behind vLLM/TGI-class serving engines, reproduced from first principles in ~400 lines of Python ([`src/backends/custom/`](src/backends/custom/)).
+
+> **Pending:** vLLM and TGI head-to-head runs require a Docker-capable GPU host (Colab has no Docker) — see skip notes in [`benchmarks/`](benchmarks/). SDXL and Triton kernel benchmarks are also pending a larger-VRAM environment.
 
 ---
 
@@ -37,42 +40,16 @@
 
 ---
 
-## Image Generation Results — Stable Diffusion XL (A100 80GB) *(illustrative)*
+## Planned Benchmarks (not yet run)
 
-> Config: 1024×1024 images, 30 DDIM steps, guidance_scale=7.5, 20 sequential generations after 2 warmup runs.
+| Benchmark | Blocker | Runner |
+|-----------|---------|--------|
+| vLLM FP16 / AWQ head-to-head | Docker + GPU host (RunPod/Lambda) | `scripts/run_bench.py --backend vllm` |
+| TGI head-to-head | Docker + GPU host | `scripts/run_bench.py --backend tgi` |
+| SDXL image generation (FP16 / attention slicing / torch.compile) | >16GB VRAM for reasonable step times | `scripts/run_bench_diffusion.py` |
+| Triton fused softmax / GELU vs PyTorch | Linux + CUDA (works on Colab; time-boxed out of the T4 session) | `scripts/run_kernel_bench.py` |
 
-| Configuration | Avg Time/Image (s) | Avg Step Time (ms) | Peak VRAM (GB) | Images/hr |
-|---------------|-------------------|-------------------|----------------|-----------|
-| SDXL FP16 (baseline) | 8.2 | 273 | 11.4 | 439 |
-| SDXL + attention_slicing | 9.1 | 303 | 7.8 | 396 |
-| SDXL + torch.compile (max-autotune) | 5.4 | 180 | 11.8 | 667 |
-| SDXL + vae_tiling (8K resolution) | 22.4 | 747 | 9.2 | 161 |
-
-> `torch.compile` delivers **1.52×** speedup at the cost of ~200s compilation on first call (cached thereafter).
-
----
-
-## Triton Kernel Results — A100 80GB SXM4 *(illustrative)*
-
-### Fused Softmax vs PyTorch (4096 rows)
-
-| N Cols | PyTorch (GB/s) | Triton (GB/s) | Speedup | % Peak BW |
-|--------|---------------|---------------|---------|-----------|
-| 512    | 489           | 812           | 1.66×   | 39.8%     |
-| 1024   | 651           | 1134          | 1.74×   | 55.6%     |
-| 2048   | 893           | 1487          | 1.66×   | 72.9%     |
-| 4096   | 1012          | 1693          | 1.67×   | 83.0%     |
-
-### Fused GELU vs PyTorch
-
-| N Elements | PyTorch (GB/s) | Triton (GB/s) | Speedup | % Peak BW |
-|------------|---------------|---------------|---------|-----------|
-| 1M         | 412           | 789           | 1.91×   | 38.7%     |
-| 16M        | 964           | 1598          | 1.66×   | 78.4%     |
-| 64M        | 1089          | 1782          | 1.64×   | 87.4%     |
-
-> GPU peak memory bandwidth: 2,039 GB/s. Triton kernels reach up to 88.8% of peak.
-> Full roofline analysis: [`src/kernels/README.md`](src/kernels/README.md)
+Kernel design docs and roofline analysis: [`src/kernels/README.md`](src/kernels/README.md)
 
 ---
 
@@ -127,28 +104,25 @@ make bench
 
 ## Methodology
 
-- **Warmup**: First 10 requests discarded before metric collection begins.
-- **Seeds**: All backends initialized with `seed=42` for deterministic sampling (temperature=0 for correctness checks).
-- **Duration**: 60-second fixed-time window (not request-count based). Throughput = total_tokens / 60s.
-- **Prompt Dataset**: Custom JSONL datasets in `prompts/` with short (avg 32 tok), medium (avg 200 tok), and long (avg 512 tok) prompt categories. Mixed benchmark uses proportional sampling.
+- **Warmup**: Warmup requests are discarded before metric collection begins.
+- **Determinism**: `temperature=0` (greedy decoding) for all benchmark runs.
+- **Duration**: Fixed-time window (not request-count based). Throughput = total completion tokens / elapsed wall time.
+- **Token counts**: Exact `completion_tokens` reported by the server (`usage` field), not text approximations.
+- **Prompt Dataset**: Custom JSONL datasets in `prompts/` with short (avg 32 tok), medium (avg 200 tok), and long (avg 512 tok) prompt categories. Fair comparisons always use the same prompt file for every backend.
 - **Percentiles**: P50/P90/P99 computed via linear interpolation across all per-request latency measurements.
-- **Isolation**: Each backend runs in its own Docker container with a dedicated GPU resource reservation to prevent memory contention.
+- **Isolation**: Backends run one at a time — the custom server is stopped before the in-process Transformers baseline runs, so they never share GPU memory.
 
 ---
 
-## Hardware
+## Hardware (measured runs)
 
 | Component | Spec |
 |-----------|------|
-| **GPU** | NVIDIA A100 SXM4 80GB |
-| **VRAM** | 80 GB HBM2e |
-| **CUDA Version** | 12.1 |
-| **CUDA Driver** | 530.30.02 |
-| **Python** | 3.11.x |
-| **PyTorch** | 2.2.1+cu121 |
-| **OS** | Ubuntu 22.04 LTS |
-| **CPU** | AMD EPYC 7763 (64 cores) |
-| **RAM** | 512 GB DDR4 |
+| **Environment** | Google Colab (free tier) |
+| **GPU** | NVIDIA Tesla T4, 16 GB GDDR6 |
+| **Python** | 3.12 |
+| **Transformers** | 5.x |
+| **Precision** | FP16 |
 
 ---
 

@@ -72,9 +72,18 @@ Kernel design docs and roofline analysis: [`src/kernels/README.md`](src/kernels/
 
 | Benchmark | Blocker | Runner |
 |-----------|---------|--------|
-| vLLM FP16 / AWQ head-to-head | GPU host with vLLM (RunPod/Lambda; pip install, no Docker needed) | `scripts/run_bench.py --backend vllm` |
+| vLLM head-to-head | bfloat16-capable GPU (see T4 findings below) | `scripts/run_bench.py --backend vllm` |
 | TGI head-to-head | Docker + GPU host | `scripts/run_bench.py --backend tgi` |
 | SDXL image generation (FP16 / attention slicing / torch.compile) | >16GB VRAM for reasonable step times | `scripts/run_bench_diffusion.py` |
+
+### Why vLLM couldn't run on the Colab T4 (measured findings)
+
+The vLLM comparison was attempted on the same Colab T4 (vLLM 0.22.0, cu129 build) and hit two hard limits worth documenting:
+
+1. **gemma-2 + fp16 rejected by design.** vLLM refuses to serve `gemma2` models in float16 (`ValueError: The model type 'gemma2' does not support float16. Reason: Numerical instability`) — gemma-2's logit softcapping can overflow in fp16. The Transformers baseline and the custom batcher ran fp16 with no such guardrail; production engines encode model-specific numerical-safety knowledge that naive serving stacks lack.
+2. **fp32 fallback exceeds the T4's shared memory.** The T4 (compute capability 7.5) supports neither bfloat16 nor FlashAttention-2, so vLLM fell back to float32 with its Triton attention backend — whose kernel requires 80 KB of shared memory per block against the T4's 64 KB hardware limit (`triton.runtime.errors.OutOfResources: shared memory, Required: 81920, Hardware limit: 65536`). The engine core died on the first forward pass.
+
+Net: serving gemma-2 through vLLM requires an Ampere-or-newer GPU (A10/L4/RTX 30xx+) where bfloat16 and larger shared memory are available. Full session log: [`llm_inferbench.ipynb`](llm_inferbench.ipynb).
 
 ---
 
